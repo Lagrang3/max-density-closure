@@ -61,7 +61,8 @@ int preflow_push(const std::vector<std::vector<int>>& node_arcs,
 
 			if (excess[node] == 0) break;
 
-			relabel(node);
+			// relabel(node);
+			distance[node]++;
 		}
 	};
 
