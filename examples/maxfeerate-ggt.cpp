@@ -8,6 +8,7 @@
  * */
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <span>
 #include <vector>
@@ -60,9 +61,15 @@ bool is_closure(const std::vector<int>& dependency, int bitset) {
         return dep == bitset;
 }
 
-/* Max density closure by Brute Force */
-int max_density_closure_BF(std::span<feefrac> rates,
-                           const std::vector<int>& dependency) {
+int set_size(int bitset) {
+        int size = 0;
+        for (int i = 0; i < MAX_ID; i++) size += in_set(bitset, i) ? 1 : 0;
+        return size;
+}
+
+/* Max density closure using Gallo-Grigoriadis-Tarjan */
+int max_density_closure_GGT(std::span<feefrac> rates,
+                            const std::vector<int>& dependency) {
         const int N = std::size(rates);
         const int max_bitset = (1 << N);
         int best_set = 0;
@@ -91,9 +98,10 @@ int main() {
                 std::cin >> a >> b;
                 dependency[a] |= (1 << b);
         }
-        int answer = max_density_closure_BF(txs, dependency);
+        int answer = max_density_closure_GGT(txs, dependency);
         auto fr = compute_feerate(txs, answer);
         std::cout << fr << "\n";
+        std::cout << set_size(answer) << " ";
         for (int i = 0; i < MAX_ID; i++)
                 if (in_set(answer, i)) {
                         std::cout << i << " ";
