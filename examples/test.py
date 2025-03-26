@@ -33,7 +33,7 @@ class tcase:
 def test_and_report(test_case):
     print("===================")
     timeout = 2
-    test_exec = "../build/examples/maxfeerate-ggt"
+    test_exec = "../build/examples/maxfeerate-fp"
     test_in = io.StringIO()
     test_case.write(test_in)
     print("Input:")
