@@ -14,64 +14,7 @@
 #include <span>
 #include <vector>
 
-const int MAX_ID = 32;
-
-bool in_set(int set, int i) { return (set & (1 << i)) > 0; }
-
-struct feefrac {
-        unsigned int fee{0}, size{0};
-
-        long long cross(const feefrac& that) const {
-                return ((long long)fee * that.size) -
-                       ((long long)size * that.fee);
-        }
-
-        feefrac& operator+=(const feefrac& that) {
-                fee += that.fee;
-                size += that.size;
-                return *this;
-        }
-
-        bool operator<(const feefrac& that) const {
-                if (size == 0 && that.size == 0) return fee < that.fee;
-                if (size == 0) return true;
-                if (that.size == 0) return false;
-                return (*this).cross(that) < 0;
-        }
-};
-
-std::ostream& operator<<(std::ostream& os, const feefrac& f) {
-        if (f.size == 0)
-                os << "NAN";
-        else
-                os << double(f.fee) / f.size;
-        os << " " << f.fee << " " << f.size;
-        return os;
-}
-
-feefrac compute_feerate(std::span<feefrac> rates, int bitset) {
-        feefrac r;
-        for (int i = 0; i < MAX_ID; i++)
-                if (in_set(bitset, i)) {
-                        r += rates[i];
-                }
-        return r;
-}
-
-bool is_closure(const std::vector<int>& dependency, int bitset) {
-        int dep = bitset;
-        for (int i = 0; i < MAX_ID; i++)
-                if (in_set(bitset, i)) {
-                        dep |= dependency[i];
-                }
-        return dep == bitset;
-}
-
-int set_size(int bitset) {
-        int size = 0;
-        for (int i = 0; i < MAX_ID; i++) size += in_set(bitset, i) ? 1 : 0;
-        return size;
-}
+#include "clusterlinearize.h"
 
 /* Maximum weight closure using Goldberg-Tarjan's Preflow-Push. */
 int max_weight_closure(std::span<long long> weights,

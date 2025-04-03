@@ -13,56 +13,7 @@
 #include <span>
 #include <vector>
 
-const int MAX_ID = 32;
-
-bool in_set(int set, int i) { return (set & (1 << i)) > 0; }
-
-struct feefrac {
-        unsigned int fee{0}, size{0};
-
-        feefrac& operator+=(const feefrac& that) {
-                fee += that.fee;
-                size += that.size;
-                return *this;
-        }
-
-        bool operator<(const feefrac& that) const {
-                if (size == 0 && that.size == 0) return fee < that.fee;
-                if (size == 0) return true;
-                if (that.size == 0) return false;
-                return fee * that.size < size * that.fee;
-        }
-        bool operator==(const feefrac& that) const {
-                return size == that.size && fee == that.fee;
-        }
-};
-
-std::ostream& operator<<(std::ostream& os, const feefrac& f) {
-        if (f.size == 0)
-                os << "NAN";
-        else
-                os << double(f.fee) / f.size;
-        os << " " << f.fee << " " << f.size;
-        return os;
-}
-
-feefrac compute_feerate(std::span<feefrac> rates, int bitset) {
-        feefrac r;
-        for (int i = 0; i < MAX_ID; i++)
-                if (in_set(bitset, i)) {
-                        r += rates[i];
-                }
-        return r;
-}
-
-bool is_closure(const std::vector<int>& dependency, int bitset) {
-        int dep = bitset;
-        for (int i = 0; i < MAX_ID; i++)
-                if (in_set(bitset, i)) {
-                        dep |= dependency[i];
-                }
-        return dep == bitset;
-}
+#include "clusterlinearize.h"
 
 /* Max density closure by Brute Force */
 int max_density_closure_BF(std::span<feefrac> rates,
