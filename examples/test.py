@@ -2,8 +2,12 @@ import io
 import copy
 import random
 import subprocess
+import sys
 
 random.seed(25)
+FAIL = 1
+OK = 0
+
 
 class tx:
     def __init__(self, idx, fee, size, depends=[]):
@@ -83,10 +87,9 @@ def random_topology(rates, m):
         add_arc(a,b)
     return tcase(txs)
 
-def test_and_report(test_case):
+def test_and_report(test_case, test_exec):
     print("===================")
     timeout = 2
-    test_exec = "../build/examples/maxfeerate-fp"
     test_in = io.StringIO()
     test_case.write(test_in)
     print("Input:")
@@ -101,13 +104,13 @@ def test_and_report(test_case):
             raise subprocess.CalledProcessError(test.returncode, test.args)
     except subprocess.TimeoutExpired as e:
         print("Time Limit Exceeded:", e)
-        return
+        return FAIL
     except subprocess.CalledProcessError as e:
         print("Runtime error: ", e)
-        return
+        return FAIL
     except Exception as e:
         print("An error occurred: ", e)
-        return
+        return FAIL
     print("Output:")
     print(test_out[0].decode())
     
@@ -123,8 +126,9 @@ def test_and_report(test_case):
             raise subprocess.CalledProcessError(test.returncode, test.args)
     except subprocess.CalledProcessError as e:
         print("Wrong Answer")
-        return
+        return FAIL
     print("Accepted")
+    return OK
 
 
 test_cases = []
@@ -140,5 +144,8 @@ test_cases.append(tcase([tx(0,2,4,[1,2]),tx(1,1,3),tx(2,4,7),tx(3,8,10,[0])]))
 test_cases.append(random_topology([(1,1), (1,1), (2,3), (2,1), (3,4)], 7))
 
 if __name__=="__main__":
+    assert len(sys.argv) == 2
     for t in test_cases:
-        test_and_report(t)
+        ret = test_and_report(t, sys.argv[1])
+        if ret==FAIL:
+            break
