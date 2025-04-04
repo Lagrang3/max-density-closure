@@ -17,8 +17,8 @@
 #include "clusterlinearize.h"
 
 /* Maximum weight closure using Goldberg-Tarjan's Preflow-Push. */
-int max_weight_closure(std::span<long long> weights,
-                       std::span<int> dependency) {
+int max_weight_closure(std::span<const long long> weights,
+                       std::span<const int> dependency) {
         const int N = std::size(weights);
         std::vector<int> distance(N, 0);
         std::vector<long long> excess(N, 0);
@@ -112,8 +112,8 @@ int max_weight_closure(std::span<long long> weights,
 }
 
 /* Max density closure using Fractional Programming and maxflow */
-int max_density_closure_FP(std::span<feefrac> rates,
-                           std::span<int> dependency) {
+int max_density_closure_FP(std::span<const feefrac> rates,
+                           std::span<const int> dependency) {
         const int N = std::size(rates);
         std::vector<long long> weights(N);
         const int max_bitset = (1 << N);

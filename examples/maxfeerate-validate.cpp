@@ -16,8 +16,8 @@
 #include "clusterlinearize.h"
 
 /* Max density closure by Brute Force */
-int max_density_closure_BF(std::span<feefrac> rates,
-                           const std::vector<int>& dependency) {
+int max_density_closure_BF(std::span<const feefrac> rates,
+                           std::span<const int> dependency) {
         const int N = std::size(rates);
         const int max_bitset = (1 << N);
         int best_set = 0;
