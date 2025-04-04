@@ -8,3 +8,6 @@ add_executable(maxfeerate-validate maxfeerate-validate.cpp)
 target_link_libraries(maxfeerate-validate clusterlinearize)
 
 add_executable(kattis-maxflow kattis-maxflow.cpp)
+
+add_executable(maxfeerate-ggt maxfeerate-ggt.cpp)
+target_link_libraries(maxfeerate-ggt clusterlinearize)
