@@ -12,6 +12,7 @@
 #include <iostream>
 #include <queue>
 #include <span>
+#include <sstream>
 #include <vector>
 
 #include "clusterlinearize.h"
@@ -32,7 +33,10 @@ int can_reach_sink(std::span<const int> dependency,
                         Q.push(i);
                 }
 
-        auto walk = [&](int node) {
+        while (!Q.empty()) {
+                int node = Q.front();
+                Q.pop();
+
                 for (int prev = 0; prev < N; prev++)
                         /* scan all nodes that can reach me in the residual
                          * network */
@@ -42,12 +46,6 @@ int can_reach_sink(std::span<const int> dependency,
                                 answer |= (1 << prev);
                                 Q.push(prev);
                         }
-        };
-
-        while (!Q.empty()) {
-                int node = Q.front();
-                Q.pop();
-                walk(node);
         }
 
         return answer;
@@ -119,7 +117,7 @@ int compute_min_cut(std::span<const long long> cap_to_source,
 
         /* identify the first active nodes and queue them */
         for (int i = 0; i < N; i++)
-                if (distance[i] < N + 1 && excess[i] > 0) Q.push(i);
+                if (distance[i] < N + 2 && excess[i] > 0) Q.push(i);
 
         /* push/relabel until there are no more active nodes */
         while (!Q.empty()) {
@@ -148,8 +146,10 @@ int max_density_closure_ggt(std::span<const feefrac> rates,
                         /* Notice this is the reversed graph. */
                         if (weights[i] > 0) {
                                 cap_to_sink[i] = weights[i];
+                                cap_to_source[i] = 0;
                         } else {
                                 cap_to_source[i] = -weights[i];
+                                cap_to_sink[i] = 0;
                         }
                 }
         };
@@ -164,11 +164,12 @@ int max_density_closure_ggt(std::span<const feefrac> rates,
         /* how we update the weights of nodes */
         auto compute_weights = [&](feefrac target) {
                 const long long FRACTION_LIFT = 1000000;
-                for (int i = 0; i < N; i++)
+                for (int i = 0; i < N; i++) {
                         weights[i] =
                             FRACTION_LIFT * rates[i].fee -
                             rates[i].size *
                                 ((FRACTION_LIFT * target.fee) / target.size);
+                }
         };
 
         /* saturate the source and reduce the flow on the sink side, it is
@@ -204,31 +205,14 @@ int max_density_closure_ggt(std::span<const feefrac> rates,
                                 rev_dependency[j] |= (1 << i);
                 }
 
-        int best_set = 0;
-        feefrac best_fr;
-
-        /* start with some initial possible solution */
-        for (int i = 0; i < N; i++) {
-                if (dependency[i] == 0) {
-                        best_set = (1 << i);
-                        best_fr = rates[i];
-                        break;
-                }
-        }
-
         /* first min-cut */
-        compute_weights(best_fr);
+        compute_weights(feefrac{0, 1});
         build_graph();
         saturate_source();
-        int x =
+        int best_set =
             compute_min_cut(cap_to_source, cap_to_sink, rev_dependency, flow,
                             flow_to_source, flow_to_sink, excess, distance);
-        feefrac fr = compute_feerate(rates, x);
-
-        /* x is at least as good as best_set */
-        assert(!(fr < best_fr));
-        best_fr = fr;
-        best_set = x;
+        feefrac best_fr = compute_feerate(rates, best_set);
 
         /* produce an increasing sequence of rates, we re-use the flow and
          * labels from every iterations. */
@@ -236,14 +220,14 @@ int max_density_closure_ggt(std::span<const feefrac> rates,
                 compute_weights(best_fr);
                 build_graph();
                 saturate_source();
-                x = compute_min_cut(cap_to_source, cap_to_sink, rev_dependency,
-                                    flow, flow_to_source, flow_to_sink, excess,
-                                    distance);
+                int x = compute_min_cut(cap_to_source, cap_to_sink,
+                                        rev_dependency, flow, flow_to_source,
+                                        flow_to_sink, excess, distance);
 
-                /* verify the nesting property */
-                assert((best_set & x) == best_set);
+                /* verify the nesting property X_{i+1}<=X_{i} */
+                assert((best_set & x) == x);
 
-                fr = compute_feerate(rates, x);
+                feefrac fr = compute_feerate(rates, x);
                 if (best_fr < fr) {
                         best_fr = fr;
                         best_set = x;
